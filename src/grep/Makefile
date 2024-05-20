@@ -22,7 +22,6 @@ run:
 
 clang:
 	clang-format --style=Google -i *.c
-	clang-format --style=Google -i *.h
 
 test: all
 	python3 test.py

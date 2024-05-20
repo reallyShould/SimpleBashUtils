@@ -19,8 +19,7 @@ typedef struct Flags {
 
 int parse_arg(int argc, char *argv[], Flags *flags);
 int pattern_index(int argc, char *argv[]);
-int parse_files(int argc, char *argv[], int startFrom, char ***lst_files,
-                int *len_files);
+char **parse_files(int argc, char *argv[], int startFrom, int *len_files);
 int read_file(char **filename, int files_len, char *pattern, Flags *flags);
 int search_in_text(char *pattern, const char *text, Flags *flags);
 
@@ -31,12 +30,19 @@ int main(int argc, char *argv[]) {
   char *pattern = argv[pattern_i];
   char **files;
   int len_files;
-  if (!parse_files(argc, argv, pattern_i + 1, &files, &len_files))
+  files = parse_files(argc, argv, pattern_i + 1, &len_files);
+  if (!len_files) {
+    free(files);
     return -1;
-  if (!parse_arg(argc, argv, &flags))
+  }
+  if (!parse_arg(argc, argv, &flags)) {
+    free(files);
     return -1;
-  if (!read_file(files, len_files, pattern, &flags))
+  }
+  if (!read_file(files, len_files, pattern, &flags)) {
+    free(files);
     return -1;
+  }
   free(files);
   return 0;
 }
@@ -49,38 +55,38 @@ int parse_arg(int argc, char *argv[], Flags *flags) {
 
   while ((opt = getopt(argc, argv, shortArgs)) != -1) {
     switch (opt) {
-    case 'e':
-      flags->e = true;
-      flags_len++;
-      break;
-    case 'i':
-      flags->i = true;
-      flags_len++;
-      break;
-    case 'v':
-      flags->v = true;
-      flags_len++;
-      break;
-    case 'c':
-      flags->c = true;
-      flags_len++;
-      break;
-    case 'l':
-      flags->l = true;
-      flags_len++;
-      break;
-    case 'n':
-      flags->n = true;
-      flags_len++;
-      break;
-    case 'h':
-      flags->h = true;
-      flags_len++;
-      break;
-    case 's':
-      flags->s = true;
-      flags_len++;
-      break;
+      case 'e':
+        flags->e = true;
+        flags_len++;
+        break;
+      case 'i':
+        flags->i = true;
+        flags_len++;
+        break;
+      case 'v':
+        flags->v = true;
+        flags_len++;
+        break;
+      case 'c':
+        flags->c = true;
+        flags_len++;
+        break;
+      case 'l':
+        flags->l = true;
+        flags_len++;
+        break;
+      case 'n':
+        flags->n = true;
+        flags_len++;
+        break;
+      case 'h':
+        flags->h = true;
+        flags_len++;
+        break;
+      case 's':
+        flags->s = true;
+        flags_len++;
+        break;
     }
   }
   return flags_len;
@@ -89,14 +95,12 @@ int parse_arg(int argc, char *argv[], Flags *flags) {
 int pattern_index(int argc, char *argv[]) {
   int flags = 0;
   for (int i = 1; i < argc; i++) {
-    if (argv[i][0] == '-')
-      flags++;
+    if (argv[i][0] == '-') flags++;
   }
   return flags + 1;
 }
 
-int parse_files(int argc, char *argv[], int startFrom, char ***lst_files,
-                int *len_files) {
+char **parse_files(int argc, char *argv[], int startFrom, int *len_files) {
   int len = argc - startFrom;
   if (!len) {
     return 0;
@@ -108,9 +112,8 @@ int parse_files(int argc, char *argv[], int startFrom, char ***lst_files,
     files[fileIndex] = argv[i];
     fileIndex++;
   }
-  *lst_files = files;
   *len_files = len;
-  return 1;
+  return files;
 }
 
 int read_file(char **filename, int files_len, char *pattern, Flags *flags) {
@@ -122,6 +125,7 @@ int read_file(char **filename, int files_len, char *pattern, Flags *flags) {
     if (file == NULL) {
       if (!flags->s)
         printf("./s21_grep: %s: No such file or directory\n", filename[i]);
+      fclose(file);
       return 0;
     }
 
@@ -163,8 +167,7 @@ int read_file(char **filename, int files_len, char *pattern, Flags *flags) {
     count = 0;
     line_counter = 1;
   }
-  if (!global_count && flags->c && !flags->v)
-    return 0;
+  if (!global_count && flags->c && !flags->v) return 0;
   return 1;
 }
 
@@ -184,8 +187,7 @@ int search_in_text(char *pattern, const char *text, Flags *flags) {
     return 0;
   }
 
-  if (ret)
-    return 0;
+  if (ret) return 0;
 
   ret = regexec(&regex, text, 0, NULL, 0);
   if (!ret)
@@ -195,7 +197,6 @@ int search_in_text(char *pattern, const char *text, Flags *flags) {
   else {
     char msgbuf[100];
     regerror(ret, &regex, msgbuf, sizeof(msgbuf));
-    regfree(&regex);
     code = 0;
   }
 
