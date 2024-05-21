@@ -21,7 +21,7 @@ run:
 	./$(TARGET)
 
 clang:
-	clang-format --style=Google -i *.?
+	clang-format --style=Google -i *.c
 
 test: all
 	python3 test.py

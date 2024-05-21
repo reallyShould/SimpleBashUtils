@@ -28,7 +28,7 @@ void ends(char act);
 void non_printing(char act, bool* isE);
 
 int main(int argc, char* argv[]) {
-  Flags flags = {false, false, false, false, false, false};
+  Flags flags = {0};
   parse_arg(argc, argv, &flags);
 
   int files_count = count_files(argv, argc);

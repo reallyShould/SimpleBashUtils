@@ -24,27 +24,19 @@ int read_file(char **filename, int files_len, char *pattern, Flags *flags);
 int search_in_text(char *pattern, const char *text, Flags *flags);
 
 int main(int argc, char *argv[]) {
-  Flags flags = {false, false, false, false, false, false, false, false};
+  Flags flags = {0};
 
+  int code = 0;
   int pattern_i = pattern_index(argc, argv);
   char *pattern = argv[pattern_i];
   char **files;
   int len_files;
   files = parse_files(argc, argv, pattern_i + 1, &len_files);
-  if (!len_files) {
-    free(files);
-    return -1;
-  }
-  if (!parse_arg(argc, argv, &flags)) {
-    free(files);
-    return -1;
-  }
-  if (!read_file(files, len_files, pattern, &flags)) {
-    free(files);
-    return -1;
-  }
+  if (!len_files && code == 0) code = -1;
+  if (!parse_arg(argc, argv, &flags) && code == 0) code = -1;
+  if (!read_file(files, len_files, pattern, &flags) && code == 0) code = -1;
   free(files);
-  return 0;
+  return code;
 }
 
 int parse_arg(int argc, char *argv[], Flags *flags) {
